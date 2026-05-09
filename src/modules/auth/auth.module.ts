@@ -6,7 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { User, UserSchema } from 'src/schemas/user.schema';
+import { User, UserSchema } from '../../schemas/user.schema';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({

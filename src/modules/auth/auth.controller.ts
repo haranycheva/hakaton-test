@@ -2,9 +2,9 @@ import { Controller, Get, Post, Body, UseGuards, UploadedFile } from '@nestjs/co
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
-import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
-import { CurrentUser } from 'src/decorators/current-user.decorator';
-import { UploadImage } from 'src/decorators/upload-image.decorator';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { CurrentUser } from '../../decorators/current-user.decorator';
+import { UploadImage } from '../../decorators/upload-image.decorator';
 
 @Controller('auth')
 export class AuthController {
