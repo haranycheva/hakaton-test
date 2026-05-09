@@ -33,7 +33,7 @@ export class AuthService {
   async register(createUserDto: CreateUserDto, filePath: string) {
     const { email, password, user_name, public_name } = createUserDto;
 
-    const doesExist = await this.userModel.findOne({ email, user_name }).exec();
+    const doesExist = await this.userModel.findOne({ $or: [{ email }, { user_name }] }).exec();
     if (doesExist) {
       throw new ConflictException('Email or username already exists');
     }
