@@ -13,9 +13,9 @@ export class AuthController {
   @Post('signup')
   @UploadImage('avatar')
   register(@UploadedFile() file: Express.Multer.File, @Body() createUserDto: CreateUserDto) {
-    return this.authService.register(createUserDto, file.path);
+    return this.authService.register(createUserDto, file);
   }
-
+  
   @Post('login')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);

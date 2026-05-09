@@ -30,7 +30,7 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
-  async register(createUserDto: CreateUserDto, filePath: string) {
+  async register(createUserDto: CreateUserDto, file: Express.Multer.File) {
     const { email, password, user_name, public_name } = createUserDto;
 
     const doesExist = await this.userModel.findOne({ $or: [{ email }, { user_name }] }).exec();
@@ -42,8 +42,8 @@ export class AuthService {
 
     let imageUrl = "";
 
-    if (filePath) {
-      const uploadResponse = await this.cloudinaryService.uploadImage(filePath);
+    if (file) {
+      const uploadResponse = await this.cloudinaryService.uploadImage(file);
       imageUrl = uploadResponse.secure_url; 
     }
 
