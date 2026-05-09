@@ -9,7 +9,7 @@ export function UploadImage(fieldName: string = 'file') {
     UseInterceptors(
       FileInterceptor(fieldName, {
         storage: diskStorage({
-          destination: './temp',
+          destination: './tmp',
           filename: (req, file, cb) => {
             const name = Date.now() + extname(file.originalname);
             cb(null, name);
