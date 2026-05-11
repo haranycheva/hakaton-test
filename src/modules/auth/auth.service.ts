@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -13,6 +14,7 @@ import * as bcrypt from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
 import { User, UserDocument } from '../../schemas/user.schema';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { OAuth2Client } from 'google-auth-library';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +23,8 @@ export class AuthService {
     private readonly cloudinaryService: CloudinaryService,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
+
+  private client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
   private generateToken(user: UserDocument): string {
     const payload = {
@@ -33,18 +37,20 @@ export class AuthService {
   async register(createUserDto: CreateUserDto, file: Express.Multer.File) {
     const { email, password, user_name, public_name } = createUserDto;
 
-    const doesExist = await this.userModel.findOne({ $or: [{ email }, { user_name }] }).exec();
+    const doesExist = await this.userModel
+      .findOne({ $or: [{ email }, { user_name }] })
+      .exec();
     if (doesExist) {
       throw new ConflictException('Email or username already exists');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    let imageUrl = "";
+    let imageUrl = '';
 
     if (file) {
       const uploadResponse = await this.cloudinaryService.uploadImage(file);
-      imageUrl = uploadResponse.secure_url; 
+      imageUrl = uploadResponse.secure_url;
     }
 
     const newUser = await this.userModel.create({
@@ -97,9 +103,7 @@ export class AuthService {
   }
 
   async getUser(id: string) {
-    const user = await this.userModel
-      .findById(id).select('-password')
-      .exec();
+    const user = await this.userModel.findById(id).select('-password').exec();
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -111,6 +115,45 @@ export class AuthService {
         public_name: user.public_name,
         avatar: user.avatar,
       },
+    };
+  }
+
+  async googleLogin(idToken: string) {
+
+    if (!idToken) {
+      throw new BadRequestException('Google token is required');
+    }
+    const ticket = await this.client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) {
+      throw new UnauthorizedException('Invalid Google token');
+    }
+    const { sub: googleId, email, name, picture } = payload;
+
+    let user = await this.userModel.findOne({ email }).exec();
+
+    if (!user) {
+      user = await this.userModel.create({
+        email,
+        name,
+        picture,
+      });
+    }
+    const access_token = this.generateToken(user);
+
+    return {
+      user: {
+        _id: user._id,
+        email: user.email,
+        user_name: user.user_name,
+        public_name: user.public_name,
+        avatar: user.avatar,
+      },
+      token: access_token,
     };
   }
 }

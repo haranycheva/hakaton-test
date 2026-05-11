@@ -32,5 +32,5 @@ if (process.env.NODE_ENV !== 'production') {
     await app.listen(3000);
     console.log('Server running on http://localhost:3000');
   }
-  // startLocal(); // Розкоментуйте, якщо запускаєте просто через node
+  startLocal(); // Розкоментуйте, якщо запускаєте просто через node
 }
