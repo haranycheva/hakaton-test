@@ -119,41 +119,46 @@ export class AuthService {
   }
 
   async googleLogin(idToken: string) {
-
-    if (!idToken) {
-      throw new BadRequestException('Google token is required');
-    }
-    const ticket = await this.client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-    if (!payload) {
-      throw new UnauthorizedException('Invalid Google token');
-    }
-    const { sub: googleId, email, name, picture } = payload;
-
-    let user = await this.userModel.findOne({ email }).exec();
-
-    if (!user) {
-      user = await this.userModel.create({
-        email,
-        name,
-        picture,
+    try {
+      if (!idToken) {
+        throw new BadRequestException('Google token is required');
+      }
+      const ticket = await this.client.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
       });
-    }
-    const access_token = this.generateToken(user);
 
-    return {
-      user: {
-        _id: user._id,
-        email: user.email,
-        user_name: user.user_name,
-        public_name: user.public_name,
-        avatar: user.avatar,
-      },
-      token: access_token,
-    };
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new UnauthorizedException('Invalid Google token');
+      }
+      const { sub: googleId, email, name, picture } = payload;
+
+      let user = await this.userModel.findOne({ email }).exec();
+
+      if (!user) {
+        user = await this.userModel.create({
+          email,
+          name,
+          picture,
+        });
+      }
+      const access_token = this.generateToken(user);
+
+      return {
+        user: {
+          _id: user._id,
+          email: user.email,
+          user_name: user.user_name,
+          public_name: user.public_name,
+          avatar: user.avatar,
+        },
+        token: access_token,
+      };
+    } catch (error: any) {
+      throw new InternalServerErrorException(
+        error?.message || 'Google login failed',
+      );
+    }
   }
 }
