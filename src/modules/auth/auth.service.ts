@@ -15,6 +15,7 @@ import { LoginDto } from './dto/login.dto';
 import { User, UserDocument } from '../../schemas/user.schema';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { OAuth2Client } from 'google-auth-library';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -118,47 +119,54 @@ export class AuthService {
     };
   }
 
-  async googleLogin(idToken: string) {
-    try {
-      if (!idToken) {
-        throw new BadRequestException('Google token is required');
-      }
-      const ticket = await this.client.verifyIdToken({
-        idToken,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
-
-      const payload = ticket.getPayload();
-      if (!payload) {
-        throw new UnauthorizedException('Invalid Google token');
-      }
-      const { sub: googleId, email, name, picture } = payload;
-
-      let user = await this.userModel.findOne({ email }).exec();
-
-      if (!user) {
-        user = await this.userModel.create({
-          email,
-          name,
-          picture,
-        });
-      }
-      const access_token = this.generateToken(user);
-
-      return {
-        user: {
-          _id: user._id,
-          email: user.email,
-          user_name: user.user_name,
-          public_name: user.public_name,
-          avatar: user.avatar,
-        },
-        token: access_token,
-      };
-    } catch (error: any) {
-      throw new InternalServerErrorException(
-        error?.message || 'Google login failed',
-      );
+async googleLogin(accessToken: string) {
+  try {
+    if (!accessToken) {
+      throw new BadRequestException('Google access token is required');
     }
+    const response = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    const payload = response.data;
+
+    if (!payload || !payload.email) {
+      throw new UnauthorizedException('Invalid Google access token');
+    }
+    const { email, name, picture } = payload;
+
+    let user = await this.userModel.findOne({ email }).exec();
+
+    if (!user) {
+      user = await this.userModel.create({
+        email,
+        name,
+        picture,
+      });
+    }
+
+    const access_token = this.generateToken(user);
+
+    return {
+      user: {
+        _id: user._id,
+        email: user.email,
+        user_name: user.user_name,
+        public_name: user.public_name,
+        avatar: user.avatar,
+      },
+      token: access_token,
+    };
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      throw new BadRequestException('Invalid or expired Google token');
+    }
+
+    throw new InternalServerErrorException(
+      error?.message || 'Google login failed',
+    );
   }
+}
 }
