@@ -85,6 +85,9 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
+    if (!user.password) {
+      throw new UnauthorizedException('Please log in with Google');
+    }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid email or password');
@@ -142,8 +145,9 @@ async googleLogin(accessToken: string) {
     if (!user) {
       user = await this.userModel.create({
         email,
-        name,
-        picture,
+        public_name: name,
+        avatar: picture,
+        user_name: email.split('@')[0],
       });
     }
 
