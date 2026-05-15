@@ -1,0 +1,9 @@
+export enum ItemCategory {
+  FOOD = 'FOOD',
+  DOCUMENT = 'DOCUMENT',
+  MEDICINE = 'MEDICINE',
+  HYGIENE = 'HYGIENE',
+  TOOLS = 'TOOLS',
+  CLOTHING = 'CLOTHING',
+  OTHER = 'OTHER',
+}
